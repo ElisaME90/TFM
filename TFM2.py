@@ -253,7 +253,7 @@ transformed_recipes_data['Clust_Vit'] = transformed_recipes_data_2['Clust_Vit']
 transformed_recipes_data['Clust_Min'] = transformed_recipes_data_3['Clust_Min']
 transformed_recipes_data['Clust_Ami'] = transformed_recipes_data_4['Clust_Ami']
 print(transformed_recipes_data)
-transformed_recipes_data.to_csv('RecetasClustering.csv', sep="|")
+#transformed_recipes_data.to_csv('RecetasClustering.csv', sep="|")
 
 # Vemos cuanto tiempo ha durado
 end_time = time.time()
