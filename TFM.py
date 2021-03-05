@@ -125,6 +125,7 @@ def sacar_ingrediente(ingrediente):
                 if palabra_alimento == palabra_ingrediente:
                     cont = cont + 1
                     alimento['cont'] = cont
+                    break
                 else:
                     alimento['cont'] = cont
         if cont == len(nombre_alimento):
@@ -155,30 +156,30 @@ def sacar_ingrediente(ingrediente):
     if posibilidad_final == {} and len(posibilidades_maximas)>0:
         posibilidad_final = posibilidades_maximas[0]
     if len(posibilidades)>0:
+        ingred = posibilidad_final['Alimento']
         for p in composicion:
             composicion[p] = posibilidad_final[p]
-    return posibilidad_final, composicion
+    return ingred, posibilidad_final, composicion
 
 # Funcion que saca la cantidad
-def sacar_cantidad(ingrediente): 
+def sacar_cantidad(ingrediente):
+    cantidad = 1 # fijamos esto por si no encuentra
     # Recorremos cada palabra del ingrediente
     for k in range(0,len(ingrediente)):
         palabra = ingrediente[k]
-        cantidad = 1 # fijamos esto por si no encuentra
-        for k in range(0,len(ingrediente)):
-            palabra = ingrediente[k]
-            try:
-                cantidad = float(palabra)
-            except ValueError:
-                pass
+        try:
+            cantidad = float(palabra)
+            break
+        except ValueError:
+            pass
     return cantidad
 
 # Funcion que saca la equivalencia
 def sacar_equivalencia(ingrediente):
     # Recorremos cada palabra del ingrediente
+    medida = 'desconocido' #fijamos esta por si no encuentra
+    gramos = 100 #fijamos esta por si no encuentra
     for k in range(0,len(ingrediente)):
-        medida = 'desconocido' #fijamos esta por si no encuentra
-        gramos = 100 #fijamos esta por si no encuentra
         palabra = ingrediente[k]
         for l in range(0,len(equivalencias)):
             equivalencia = equivalencias[l]
@@ -192,14 +193,18 @@ def sacar_equivalencia(ingrediente):
     return medida, gramos
 
 # Funcion que calcula la composicion nutricional de las recetas
-def composicion_recetas(ingredientes, raciones):
+def composicion_recetas(ingredientes, raciones, encontrado, no_encontrado):
     composicion_receta = {'CAL': 0, 'PR': 0, 'GR': 0, 'HC': 0, 'H20': 0, 'CEN': 0, 
     'A': 0, 'B1': 0, 'B2': 0, 'C': 0, 'Niac': 0, 'Na': 0, 'K': 0, 'Ca': 0, 'Mg': 0, 
     'Fe': 0, 'Cu': 0, 'P': 0, 'S': 0, 'Cl': 0, 'Fen': 0, 'Ileu': 0, 'Leu': 0, 'Lis': 0, 
     'Met': 0, 'Tre': 0, 'Tri': 0, 'Val': 0}
     for i in range(0,len(ingredientes)):
         ingrediente = ingredientes[i]
-        ingr, composicion_ingr = sacar_ingrediente(ingrediente)
+        ingred, ingr, composicion_ingr = sacar_ingrediente(ingrediente)
+        if ingred == 'desconocido':
+            no_encontrado = no_encontrado + 1
+        else:
+            encontrado = encontrado + 1
         cant = sacar_cantidad(ingrediente)
         med, gr = sacar_equivalencia(ingrediente)
         gramos = cant * gr / 100
@@ -209,7 +214,7 @@ def composicion_recetas(ingredientes, raciones):
         if raciones == '':
             raciones = 1
         composicion_receta[k] = round((composicion_receta[k] / int(raciones)), 3)
-    return composicion_receta
+    return composicion_receta, encontrado, no_encontrado
 
 # ------------------------------------------------------------
 
@@ -222,15 +227,27 @@ recipes = recetas_cocina()
 alimentos = composicion_nutricional()
 equivalencias = equivalencias_medidas()
 # Cruce de datos
+encontrado = 0
+no_encontrado = 0
 for i in range(0,len(recipes)):
     # Recorremos los ingredientes de la receta
     receta = recipes[i]
     ingredientes = receta['Ingredientes']
     raciones = receta['Num_comensales']
-    composicion_receta = composicion_recetas(ingredientes,raciones)
+    composicion_receta, encontrado, no_encontrado = composicion_recetas(ingredientes, raciones, encontrado, no_encontrado)
     for j in composicion_receta:
         receta[j] = composicion_receta[j]
+totales = encontrado + no_encontrado
+porc_encontrado = round((encontrado / totales) * 100, 2)
+porc_no_encontrado = round((no_encontrado / totales) * 100, 2)
+print('')
+print('encontrado = ' + str(encontrado))
+print('no_encontrado = ' + str(no_encontrado))
+print('totales = ' + str(totales))
+print('% encontrado = ' + str(porc_encontrado) + '%')
+print('% no_encontrado = ' + str(porc_no_encontrado) + '%')
 #Guarda la información de las recetas en un fichero CSV
+"""
 keys = recipes[0].keys()
 with open("RecetasComposicion.csv", mode='w', encoding='utf-8') as file:
     writer = csv.writer(file, delimiter='|', quotechar='"', lineterminator='\n', quoting=csv.QUOTE_MINIMAL)
@@ -239,6 +256,7 @@ with open("RecetasComposicion.csv", mode='w', encoding='utf-8') as file:
         receta = recipes[r]
         values = receta.values()
         writer.writerow(values)
+"""
 # Vemos cuanto tiempo ha durado
 end_time = time.time()
 total_time = time.strftime("%H:%M:%S", time.gmtime(end_time - start_time))
